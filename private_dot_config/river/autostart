@@ -1,0 +1,15 @@
+#!/usr/bin/sh
+
+# always
+riverctl spawn "${HOME}/.local/bin/dam-run"
+
+# restart
+killall -q fcitx5 nutstore clash-verge
+
+riverctl spawn "fcitx5 -d"
+riverctl spawn "nutstore&"
+riverctl spawn "clash-verge&"
+
+# 在 river 启动后，将当前环境变量导入 systemd --user
+riverctl spawn 'systemctl --user import-environment WAYLAND_DISPLAY DISPLAY'
+riverctl spawn "$HOME/.local/bin/wallpaper.sh"
