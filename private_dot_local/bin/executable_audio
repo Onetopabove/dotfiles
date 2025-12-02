@@ -1,0 +1,37 @@
+#!/usr/bin/sh
+
+usage() {
+    echo "Usage: $0 [--minus/plus/mute]"
+    echo ""
+    echo "Options:"
+    echo "   --minus      减少音量"
+    echo "   --plus       增加音量"
+    echo "   --mute       切换静音"
+    echo "   -h, --help   显示此帮助信息"
+    exit 1
+}
+
+for arg in "$@"; do
+    case "$arg" in
+        --minus)
+            amixer set Master 5%-
+            ;;
+        --plus)
+            amixer set Master 5%+
+            ;;
+        --mute)
+            amixer set Master toggle
+            ;;
+        --help|-h)
+            usage
+            exit 1
+            ;;
+        *)
+            echo "错误: 不支持的参数 '$arg'"
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+kill -RTMIN "$(cat ~/.cache/pidofbar)"

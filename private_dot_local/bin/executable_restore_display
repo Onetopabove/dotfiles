@@ -1,0 +1,27 @@
+#!/bin/sh
+#export WAYLAND_DISPLAY=$(cat /proc/$(pgrep -u $USER river | head -n1)/environ 2>/dev/null | tr "\\0" "\\n" | grep ^WAYLAND_DISPLAY= | cut -d= -f2)
+#if [ -z "$WAYLAND_DISPLAY" ]; then
+#    echo "WAYLAND_DISPLAY not found"
+#    exit 1
+#fi
+if [ -z "$1" ]; then
+  echo "用法: $0 {all|laptop|screen}"
+  exit 1
+fi
+
+if [ $1 = "all" ]; then
+  wlr-randr --output HDMI-A-1 --on --mode 3840x2160@144Hz --pos 0,0 \
+            --output eDP-1 --on --mode 2560x1600@240.001999Hz --pos 3840,280
+elif [ $1 = "laptop" ]; then
+  wlr-randr --output HDMI-A-1 --off
+            --output eDP-1 --on --mode 2560x1600@240.001999Hz --pos 0,0
+elif [ $1 = "screen" ]; then
+  wlr-randr --output HDMI-A-1 --on --mode 3840x2160@144Hz --pos 0,0 \
+            --output eDP-1 --off
+else
+  echo "错误: 位置参数'$1'"
+  echo "用法: $0 {all|laptop|screen}"
+  exit 1
+fi
+
+

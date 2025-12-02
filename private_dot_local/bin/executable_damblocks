@@ -1,0 +1,75 @@
+#!/bin/env sh
+
+# INIT
+echo $$ > ~/.cache/pidofbar
+sec=0
+
+# MODULES
+update_cpu () {
+    cpu="$(grep -o "^[^ ]*" /proc/loadavg )"
+}
+
+update_memory () {
+    memory="$(free -h | sed -n "2s/\([^ ]* *\)\{2\}\([^ ]*\).*/\2/p")"
+}
+
+update_time () {
+    time="$(date "+[%a %d %b] [%I:%M %P]")"
+}
+
+update_vol () {
+    local output=$(amixer get Master)
+    vol=$(echo "$output" | awk -F'[][]' '/Mono: Playback/ || /Front Left:/ {print $2; exit}')
+    local muted=$(echo "$output" | awk '/Mono: Playback/ || /Front Left:/ {print $NF; exit}')
+    if echo "$muted" | grep -q "off"; then
+        vol="$vol off"
+    fi
+}
+
+update_in_backlight () {
+    read -r actual_backlight </sys/class/backlight/intel_backlight/actual_brightness
+    read -r max_backlight </sys/class/backlight/intel_backlight/max_brightness
+    internal_backlight="$((actual_backlight*100/max_backlight))%"
+}
+update_ex_backlight () {
+    external_backlight="$(sudo ddcutil getvcp 10 | awk -F'current value =|,' '{gsub(/ /, "", $2); print $2}')%"
+}
+
+update_bat () {
+    read -r bat_status </sys/class/power_supply/BAT0/status
+    read -r bat_capacity </sys/class/power_supply/BAT0/capacity
+    bat="$bat_status $bat_capacity%"
+}    
+
+update_vol
+update_in_backlight
+update_ex_backlight
+
+
+display () {
+    printf "%s\n" "[$memory $cpu] [bat:$bat] [in_light:$internal_backlight ex_light:$external_backlight] [vol:$vol] $time"
+}
+
+# SIGNALLING
+# trap	"<function>;display"		"RTMIN+n"
+trap	"update_vol;display"		"RTMIN"
+trap	"update_in_backlight;display" 	"RTMIN+1"
+trap	"update_ex_backlight;display" 	"RTMIN+2"
+# to update it from external commands
+## kill -m "$(cat ~/.cache/pidofbar)"
+# where m = 34 + n
+
+
+while true
+do
+    sleep 1 & wait && {
+        [ $((sec % 5)) -eq 0 ] && update_time
+        [ $((sec % 15)) -eq 0 ] && update_cpu
+        [ $((sec % 15)) -eq 0 ] && update_memory
+        [ $((sec % 60)) -eq 0 ] && update_bat
+
+
+        [ $((sec % 5)) -eq 0 ] && display
+        sec=$((sec + 1))
+    }
+done

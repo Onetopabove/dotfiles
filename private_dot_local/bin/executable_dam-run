@@ -1,0 +1,14 @@
+#!/usr/bin/sh
+
+bar_start() {
+    ${HOME}/.local/bin/damblocks | dam
+}
+
+bar_restart() {
+    killall dam
+    pkill -f damblocks
+    bar_start
+}    
+
+! pgrep 'dam' > /dev/null 2>&1 || ! pgrep 'damblocks' > /dev/null 2>&1 && bar_restart
+

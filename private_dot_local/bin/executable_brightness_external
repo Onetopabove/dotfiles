@@ -1,0 +1,47 @@
+#!/usr/bin/sh
+
+
+usage() {
+    echo "Usage: $0 [--minus/plus]"
+    echo ""
+    echo "Options:"
+    echo "  --minus       减少屏幕亮度"
+    echo "  --plus        增加屏幕亮度"
+    exit 1
+}
+
+# 先安装 ddcutil，确保显示器支持 DDC/CI 
+output=$(sudo ddcutil getvcp 10)
+current=$(echo "$output" | awk -F'current value =|,' '{gsub(/ /, "", $2); print $2}')
+max=$(echo "$output" | awk -F'max value =|,' '{gsub(/ /, "", $2); print $2}')
+min=5
+
+for arg in "$@"; do
+    case "$arg" in
+        --minus)
+            current=$(( $current - 5 ))
+            ;;
+        --plus)
+            current=$(( $current + 5 ))
+            ;;
+        --help|-h)
+            usage
+            ;;
+        *)
+            echo "错误: 不支持的参数 '$arg'"
+            usage
+            ;;
+    esac
+done
+
+if (( $current > 100 ))
+then
+    current=$max
+elif (( $current < $min))
+then
+    current=$min
+fi
+sudo ddcutil setvcp 10 $current
+kill -RTMIN+2 $(cat ~/.cache/pidofbar)
+
+         
